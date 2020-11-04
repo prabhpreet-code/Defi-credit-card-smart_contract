@@ -1,0 +1,111 @@
+pragma solidity >=0.5.13 < 0.7.0 ;
+
+contract Credit_Card{
+    address public company ; //owner's address
+    
+    constructor() public {
+        company = msg.sender;
+    }
+     
+    struct Credit_details{
+        address employee_address ;
+        uint limit ;
+        string class ;
+    }
+    
+    
+    Credit_details[] public totalEmployees ; // array of all the employees
+    mapping(address=>string) addressToClass ; // mapping of addresses of employees to their class given by company
+    mapping(address=>uint) money_balance ; // mapping of addresses to their balance
+    address[] totalAddresses ; //array of all the addresses of employees
+    
+    // modifier having functionality company can only access it
+    modifier onlyCompany {
+        require(company == msg.sender , "CAN'T PERFORM WITHOUT COMPANY PERMMISSIONS");
+        _;
+    }
+    
+    // company will add it's employees details and will assign them a class
+    function addEmployees(address employee_address , string memory class) public onlyCompany{
+        if(keccak256(abi.encodePacked((class))) == keccak256(abi.encodePacked(("A")))){
+            totalEmployees.push(Credit_details(employee_address , 50 , class)) ;
+            addressToClass[employee_address] = class ;
+            totalAddresses.push(employee_address) ;
+        }
+        
+        else if(keccak256(abi.encodePacked((class))) == keccak256(abi.encodePacked(("B")))){
+            totalEmployees.push(Credit_details(employee_address , 25 , class)) ;
+            addressToClass[employee_address] = class ;
+            totalAddresses.push(employee_address) ;
+            
+        }
+        
+        else if(keccak256(abi.encodePacked((class))) == keccak256(abi.encodePacked(("C")))) {
+            totalEmployees.push(Credit_details(employee_address , 10 , class)) ;
+            addressToClass[employee_address] = class ;
+            totalAddresses.push(employee_address) ;
+        }
+        
+    }
+    
+    // employees can withdraw company's money but in assigned limit
+    function withdrawMoney(address your_address , uint money_to_withdraw) public {
+      require(your_address == msg.sender , "YOU CANNOT WITHDRAW MONEY FROM OTHER'S ACCOUNT") ;
+      uint money_taken = money_to_withdraw * 1 ether ;
+      // to check if employee is registered by the company or not
+      bool checking ;
+      for(uint i=0 ; i<totalAddresses.length ; i++){
+          if(totalAddresses[i]==msg.sender){
+              checking = true ;
+          }
+          else{
+              checking = false ;
+          }
+       }
+      require(checking == true , "YOU CANNOT WITHDRAW MONEY WITHOUT COMPANY'S REGISTRATION");     
+ 
+      if(keccak256(abi.encodePacked(addressToClass[your_address])) == keccak256(abi.encodePacked("A"))){
+        require(money_taken <= 50 ether , "PLEASE DRAW WITHIN YOUR LIMIT") ;
+        money_balance[msg.sender] += money_taken ;
+        address payable to = msg.sender ;
+        to.transfer(money_taken) ;
+       }
+        
+      else if(keccak256(abi.encodePacked(addressToClass[your_address])) == keccak256(abi.encodePacked("B"))){ 
+        require(money_taken <= 25 ether, "PLEASE DRAW WITHIN YOUR LIMIT") ;
+        money_balance[msg.sender] += money_taken ;
+        address payable to = msg.sender ;
+        to.transfer(money_taken) ;
+       }
+        
+      else if(keccak256(abi.encodePacked(addressToClass[your_address])) == keccak256(abi.encodePacked("C"))){
+        require(money_taken <= 10 ether , "PLEASE DRAW WITHIN YOUR LIMIT") ;
+        money_balance[msg.sender] += money_taken ;
+        address payable to = msg.sender ;
+        to.transfer(money_taken) ;
+       }
+     
+    }
+    
+    // to check the current balance of employee
+    function accountBalance(address your_address) public view returns(uint){
+        require(your_address == msg.sender , "YOU CANNOT CHECK MONEY OF OTHER'S ACCOUNT") ;
+        return money_balance[your_address] ;
+    }
+    
+    // company can add funds to their contract
+    function addMoneyToFunds() public payable onlyCompany {
+        
+    }
+    
+    // employees to pay back the money they have borrowed
+    function payMoneyBack(address your_address ) public payable {
+        require(your_address == msg.sender , "YOU CANNOT CHECK MONEY OF OTHER'S ACCOUNT") ;
+        require(money_balance[msg.sender]>=0 , "YOU HAVE NO DUES LEFT");
+        money_balance[msg.sender] -= msg.value ;
+    }
+    
+    
+
+}
+
